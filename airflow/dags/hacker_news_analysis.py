@@ -29,7 +29,7 @@ def fetch_and_save_top_stories():
             })
     
     # Specify the directory to save the file
-    directory = "/Users/johnpherson/Documents/github_repo/hacker_news_titles_analysis/hn_json_results"
+    directory = "/Users/johnpherson/Documents/github_repo/airflow_projects/json_results"
     
     # Ensure the directory exists
     if not os.path.exists(directory):
