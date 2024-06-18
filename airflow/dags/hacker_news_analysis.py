@@ -45,12 +45,6 @@ def fetch_and_save_top_stories():
         json.dump(stories, f, indent=4)
     print(f"Stories saved to {filename}")
 
-# def main():
-#     fetch_and_save_top_stories()
-
-# if __name__ == '__main__':
-#     main()
-
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
