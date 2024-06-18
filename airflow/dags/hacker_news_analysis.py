@@ -2,12 +2,12 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
 import requests
-from sqlalchemy import create_engine, Column, Integer, String, MetaData, Table
+from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Define the database URL
-DATABASE_URL = 'postgresql+psycopg2://admin:admin@localhost:5432/hack_news_analysis'
+DATABASE_URL = 'postgresql+psycopg2://admin:admin@localhost:5432/hn'
 
 # Create a new SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
