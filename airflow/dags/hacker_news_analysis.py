@@ -3,6 +3,7 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
 from datetime import datetime, timedelta
 from airflow.models import Variable
 import sys
@@ -80,5 +81,14 @@ create_view_task = PostgresOperator(
     dag=dag,
 )
 
+# Define the Slack notification task
+slack_notify_task = SlackWebhookOperator(
+    task_id='slack_notify_task',
+    slack_webhook_conn_id='slack_webhook',  # Use the connection ID you set up in the Airflow UI
+    message="DAG hacker_news_analysis has completed successfully.",
+    username='airflow',
+    dag=dag,
+)
+
 # Define the task pipeline
-fetch_stories_task >> merge_data_task >> create_view_task
+fetch_stories_task >> merge_data_task >> create_view_task >> slack_notify_task
