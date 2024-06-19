@@ -2,9 +2,14 @@
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 from datetime import datetime, timedelta
+from airflow.models import Variable
 import sys
 import os
+from pathlib import Path
+
+# Set the no_proxy environment variable to bypass the proxy for all requests
 os.environ["no_proxy"]="*"
 
 # Add the scripts directory to the Python path
@@ -33,12 +38,43 @@ dag = DAG(
     catchup=False,
 )
 
+
 # Define the PythonOperator
-fetch_stories_task = PythonOperator(
+fetch_stories = PythonOperator(
     task_id='fetch_and_save_top_stories',
     python_callable=fetch_and_save_top_stories,
     dag=dag,
 )
 
+# Define the SQL file path
+dag_folder = Path(__file__).parent
+sql_file_path = dag_folder.parent / 'sql' / 'merge_stg_data.sql'
+
+# Debug path
+print(f"SQL file path: {sql_file_path}")
+
+# Convert Path object to string
+sql_file_path_str = str(sql_file_path)
+
+# Read the SQL file
+try:
+    with open(sql_file_path_str, 'r') as file:
+        merge_sql = file.read()
+        # Print the SQL content for debugging purposes
+        print(f"SQL content:\n{merge_sql}")
+except Exception as e:
+    print(f"Error reading SQL file: {e}")
+    raise
+
+
+
+# Define the PostgresOperator task to execute the SQL file
+merge_data_task = PostgresOperator(
+    task_id='merge_data_task',
+    postgres_conn_id='postgres_conn_id',  # Use the connection ID you set up in the Airflow UI
+    sql=merge_sql,
+    dag=dag,
+)
+
 # Define the task pipeline
-fetch_stories_task
+fetch_stories >> merge_data_task
