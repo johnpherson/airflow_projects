@@ -39,36 +39,32 @@ dag = DAG(
 )
 
 
-# Define the PythonOperator
-fetch_stories = PythonOperator(
-    task_id='fetch_and_save_top_stories',
+# Define the SQL file paths using Path module for better path handling
+dag_folder = Path(__file__).parent
+merge_sql_file_path = dag_folder.parent / 'sql' / 'merge_stg_data.sql'
+create_view_sql_file_path = dag_folder.parent / 'sql' / 'create_view.sql'
+
+# Read the SQL files
+try:
+    with open(merge_sql_file_path, 'r') as merge_file:
+        merge_sql = merge_file.read()
+except FileNotFoundError:
+    raise FileNotFoundError(f"SQL file not found: {merge_sql_file_path}")
+
+try:
+    with open(create_view_sql_file_path, 'r') as view_file:
+        create_view_sql = view_file.read()
+except FileNotFoundError:
+    raise FileNotFoundError(f"SQL file not found: {create_view_sql_file_path}")
+
+# Define the PythonOperator task to fetch and save stories
+fetch_stories_task = PythonOperator(
+    task_id='fetch_stories_task',
     python_callable=fetch_and_save_top_stories,
     dag=dag,
 )
 
-# Define the SQL file path
-dag_folder = Path(__file__).parent
-sql_file_path = dag_folder.parent / 'sql' / 'merge_stg_data.sql'
-
-# Debug path
-print(f"SQL file path: {sql_file_path}")
-
-# Convert Path object to string
-sql_file_path_str = str(sql_file_path)
-
-# Read the SQL file
-try:
-    with open(sql_file_path_str, 'r') as file:
-        merge_sql = file.read()
-        # Print the SQL content for debugging purposes
-        print(f"SQL content:\n{merge_sql}")
-except Exception as e:
-    print(f"Error reading SQL file: {e}")
-    raise
-
-
-
-# Define the PostgresOperator task to execute the SQL file
+# Define the PostgresOperator task to execute the merge SQL
 merge_data_task = PostgresOperator(
     task_id='merge_data_task',
     postgres_conn_id='postgres_conn_id',  # Use the connection ID you set up in the Airflow UI
@@ -76,5 +72,13 @@ merge_data_task = PostgresOperator(
     dag=dag,
 )
 
+# Define the PostgresOperator task to create the view
+create_view_task = PostgresOperator(
+    task_id='create_view_task',
+    postgres_conn_id='postgres_conn_id',  # Use the connection ID you set up in the Airflow UI
+    sql=create_view_sql,
+    dag=dag,
+)
+
 # Define the task pipeline
-fetch_stories >> merge_data_task
+fetch_stories_task >> merge_data_task >> create_view_task
